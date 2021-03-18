@@ -41,6 +41,9 @@ class Prospect:
         self.servicing = random.uniform(config["min_servicing"], config["max_servicing"])  # An assigned service time
         self.arrival = env.now  # The time the prospective customer is instantiated
 
+    def render(self):
+        pass
+
     def handle(self, env, counter):
         with counter.request() as req:
             # Wait for the counter or abort at the end of our tether
@@ -58,4 +61,13 @@ class Prospect:
 
     def write(self):
         pass
+
+    def __repr__(self):
+        pass
+
+    def __str__(self):
+        self.render()
+
+
+
 
