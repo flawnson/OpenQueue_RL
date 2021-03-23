@@ -1,28 +1,30 @@
 import simpy
+import names  # To get random name for prospects
 import random
 
 from typing import *
 from logzero import logger
 
-from torch_patience.data.patrons.patron import customer
+from patrons.prospect import Prospect
 
 
 class Queue:
     """A Simpy simulation with a class structure to mimic OpenAI's gym"""
     def __init__(self, config: Dict, render: bool = False):
         self.config = config
+        self.env_config = config["env_config"]
         self.state = {
-            "prospects": 0
+            "prospects": []  # A list of prospective patrons
         }
         self.env = simpy.Environment()
         self.render_env = render
-        self.counter = simpy.Resource(self.env, capacity=config["capacity"])
-        self.receptionist_delay = random.uniform(config["min_delay"], config["max_delay"])  # An assigned delay
+        self.counter = simpy.Resource(self.env, capacity=self.env_config["max_capacity"])
+        self.receptionist_delay = random.uniform(self.env_config["min_delay"], self.env_config["max_delay"])  # An assigned delay
         self.curr_time_step = 1
-        self.next_time_step = 2
+        self.next_time_step = 1
 
     def _action_check(self, action):
-        assert isinstance(action, int) and 0 <= action <= 6, "Illegal action by model; terminating run"
+        assert 0 <= action <= 6, f"{action} is an illegal action by model; terminating run"
 
     def render(self):
         pass
@@ -46,7 +48,7 @@ class Queue:
 
         num_prospects = self.config["avg_daily_prospects"] * prospects.servicing
         for prospect in range(num_prospects):
-            self.state['prospects'] += 1
+            self.state["prospects"].append(Prospect(config, names.get_full_name(), self.env))
             self.env.process(self.handle_prospect(inital_load=True))
 
     def get_observation(self):
@@ -77,10 +79,10 @@ class Queue:
 
         observation = self.get_observation()
 
-        terminal = True if self.env.now >= self.sim_duration else False
+        terminal = True if self.env.now >= self.env_config["duration"] else False
 
         # Get reward
-        reward = self._calculate_reward()
+        reward = self.get_reward()
 
         # Information is empty dictionary (used to be compatible with OpenAI Gym)
         info = dict()

@@ -6,9 +6,12 @@ import random
 import torch
 import simpy
 import json
+import numpy as np
 
 from typing import *
 from logzero import logger
+
+from queues.queue import Queue
 
 
 if __name__ == "__main__":
@@ -23,20 +26,14 @@ if __name__ == "__main__":
     logzero.loglevel(eval(config["logging"]))
 
     # Setup and start the simulation
-    print('Bank renege')
+    logger.info('Bank renege')
     random.seed(config["random_seed"])
-    env = simpy.Environment()
+
+    sim = Queue(config, render=False)
+
+    for i in range(9):
+        action = np.random.choice([1, 2, 3, 4, 5])
+        state_next, reward, terminal, info = sim.step(action)
 
 
-    def source(env, number, interval, counter):
-        """Source generates customers randomly"""
-        for i in range(number):
-            c = customer(env, 'Customer%02d' % i, counter, time_in_bank=12.0)
-            env.process(c)
-            t = random.expovariate(1.0 / interval)  # Exponential distribution
-            yield env.timeout(t)
 
-    # Start processes and run
-    counter = simpy.Resource(env, capacity=1)
-    env.process(source(env, config["patron_config"]["num_patrons"], config["patron_config"]["intervals"], counter))
-    env.run()  # NOT running until no more events to process, run until next time step

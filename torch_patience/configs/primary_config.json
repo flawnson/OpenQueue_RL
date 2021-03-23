@@ -1,6 +1,8 @@
 {
   "run_name": "development_run",
   "random_seed": 42,
+  "device": "cpu",
+  "logging": "logging.INFO",
   "patron_config": {
     "num_patrons": 5,
     "intervals": 10.0,
@@ -8,6 +10,9 @@
     "max_patience": 3
   },
   "env_config": {
-    "max_capacity": 12
+    "duration": 100,
+    "max_capacity": 12,
+    "min_delay": 0,
+    "max_delay": 15
   }
 }
