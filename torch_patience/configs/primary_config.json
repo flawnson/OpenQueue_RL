@@ -3,8 +3,8 @@
   "random_seed": 42,
   "device": "cpu",
   "logging": "logging.INFO",
-  "patron_config": {
-    "num_patrons": 5,
+  "prospect_config": {
+    "num_prospect": 100,
     "intervals": 10.0,
     "min_patience": 1,
     "max_patience": 3
@@ -12,6 +12,7 @@
   "env_config": {
     "duration": 100,
     "max_capacity": 12,
+    "mean_daily_prospects": 30,
     "min_delay": 0,
     "max_delay": 15
   }

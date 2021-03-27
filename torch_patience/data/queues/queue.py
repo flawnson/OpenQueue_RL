@@ -5,7 +5,7 @@ import random
 from typing import *
 from logzero import logger
 
-from patrons.prospect import Prospect
+from torch_patience.data.patrons.prospect import AbstractProspect, Prospect
 
 
 class Queue:
@@ -16,10 +16,11 @@ class Queue:
         self.state = {
             "prospects": []  # A list of prospective patrons
         }
-        self.env = simpy.Environment()
         self.render_env = render
-        self.counter = simpy.Resource(self.env, capacity=self.env_config["max_capacity"])
+        self.env = simpy.Environment()
+        self.counter = simpy.Resource(self.env, capacity=self.env_config["max_capacity"])  # capacity is line capacity
         self.receptionist_delay = random.uniform(self.env_config["min_delay"], self.env_config["max_delay"])  # An assigned delay
+        self.template_prospect = AbstractProspect(config, self.env)
         self.curr_time_step = 1
         self.next_time_step = 1
 
@@ -43,16 +44,17 @@ class Queue:
         delay = max(self.receptionist_delay - 0.001, 0)
         yield self.env.timeout(delay)
 
-    def init_prospect(self):
+    def init_prospects(self):
         """The initial prospects to queue up"""
 
-        num_prospects = self.config["avg_daily_prospects"] * prospects.servicing
+        num_prospects = self.env_config["mean_daily_prospects"] * prospects.servicing
         for prospect in range(num_prospects):
-            self.state["prospects"].append(Prospect(config, names.get_full_name(), self.env))
-            self.env.process(self.handle_prospect(inital_load=True))
+            self.state["prospects"].append(Prospect(self.config, names.get_full_name(), self.env))
+            self.env.process(self.handle_prospect())
 
     def get_observation(self):
         # Put state dictionary items into observations list
+        # Consider adding len(counter.users) a.k.a counter.count
         observations = [v for k, v in self.state.items()]
 
         # Return starting state observations
@@ -98,14 +100,14 @@ class Queue:
         self.env = simpy.Environment()
         self.next_time_stop = 0
 
+        # Inital load of patients (to average occupancy)
+        self.init_prospects()
+
         # Set up starting processes
         self.env.process(self.handle_prospect())
 
         # Set starting state values
         self.state['queue_len'] = 0
-
-        # Inital load of patients (to average occupancy)
-        self.init_prospect()
 
         # Return starting state observations
         observations = self.get_observations()
