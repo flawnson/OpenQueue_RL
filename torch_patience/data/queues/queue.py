@@ -5,7 +5,7 @@ import random
 from typing import *
 from logzero import logger
 
-from torch_patience.data.patrons.prospect import AbstractProspect, Prospect
+from patrons.prospect import AbstractProspect, Prospect
 
 
 class Queue:
@@ -33,8 +33,8 @@ class Queue:
     def close(self):
         pass
 
-    def handle_prospect(self) -> Generator:
-        return prospect.handle(self.env, self.counter)
+    def handle_new_prospect(self, new_prospect) -> Generator:
+        return new_prospect.handle(self.counter)
 
     def modify_state(self, action):
         pass
@@ -47,12 +47,13 @@ class Queue:
     def init_prospects(self):
         """The initial prospects to queue up"""
 
-        num_prospects = self.env_config["mean_daily_prospects"] * prospects.servicing
+        num_prospects = self.env_config["mean_daily_prospects"] * self.template_prospect.servicing
         for prospect in range(num_prospects):
-            self.state["prospects"].append(Prospect(self.config, names.get_full_name(), self.env))
-            self.env.process(self.handle_prospect())
+            new_prospect = Prospect(self.config, names.get_full_name(), self.env)
+            self.state["prospects"].append(new_prospect)
+            self.env.process(self.handle_new_prospect(new_prospect))
 
-    def get_observation(self):
+    def get_observations(self):
         # Put state dictionary items into observations list
         # Consider adding len(counter.users) a.k.a counter.count
         observations = [v for k, v in self.state.items()]
@@ -79,7 +80,7 @@ class Queue:
         self.next_time_step += self.curr_time_step
         self.env.run(until=self.next_time_step)
 
-        observation = self.get_observation()
+        observation = self.get_observations()
 
         terminal = True if self.env.now >= self.env_config["duration"] else False
 
@@ -96,18 +97,18 @@ class Queue:
         return (observation, reward, terminal, info)
 
     def reset(self):
-        # Initialise simpy environemnt
-        self.env = simpy.Environment()
-        self.next_time_stop = 0
+        # Initialise simpy environment
+        # self.env = simpy.Environment()
+        self.next_time_step = 0
 
-        # Inital load of patients (to average occupancy)
+        # Initial load of patients (to average occupancy)
         self.init_prospects()
 
-        # Set up starting processes
-        self.env.process(self.handle_prospect())
+        # # Set up starting processes
+        # self.env.process(self.handle_new_prospect())
 
         # Set starting state values
-        self.state['queue_len'] = 0
+        self.state["prospects"].clear()
 
         # Return starting state observations
         observations = self.get_observations()
