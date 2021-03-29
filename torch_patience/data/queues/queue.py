@@ -17,7 +17,7 @@ class Queue:
             "prospects": []  # A list of prospective patrons
         }
         self.render_env = render
-        self.env = simpy.Environment()
+        self.env = simpy.RealtimeEnvironment() if config["real_time"] else simpy.Environment()
         self.counter = simpy.Resource(self.env, capacity=self.env_config["max_capacity"])  # capacity is line capacity
         self.receptionist_delay = random.uniform(self.env_config["min_delay"], self.env_config["max_delay"])  # An assigned delay
         self.template_prospect = AbstractProspect(config, self.env)
@@ -53,14 +53,6 @@ class Queue:
             self.state["prospects"].append(new_prospect)
             self.env.process(self.handle_new_prospect(new_prospect))
 
-    def get_observations(self):
-        # Put state dictionary items into observations list
-        # Consider adding len(counter.users) a.k.a counter.count
-        observations = [v for k, v in self.state.items()]
-
-        # Return starting state observations
-        return observations
-
     def get_reward(self):
         """ Reward always negative or 0 """
 
@@ -80,7 +72,7 @@ class Queue:
         self.next_time_step += self.curr_time_step
         self.env.run(until=self.next_time_step)
 
-        observation = self.get_observations()
+        observation = self.state
 
         terminal = True if self.env.now >= self.env_config["duration"] else False
 
@@ -96,9 +88,8 @@ class Queue:
         # Return tuple of observations, reward, terminal, info
         return (observation, reward, terminal, info)
 
-    def reset(self):
+    def setup(self):
         # Initialise simpy environment
-        # self.env = simpy.Environment()
         self.next_time_step = 0
 
         # Initial load of patients (to average occupancy)
@@ -107,11 +98,12 @@ class Queue:
         # # Set up starting processes
         # self.env.process(self.handle_new_prospect())
 
-        # Set starting state values
-        self.state["prospects"].clear()
+        # # Set starting state values
+        # self.state["prospects"].clear()
 
         # Return starting state observations
-        observations = self.get_observations()
+        observations = self.state
+
         return observations
 
     def __repr__(self):

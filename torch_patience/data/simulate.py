@@ -31,12 +31,12 @@ if __name__ == "__main__":
 
     sim = Queue(config, render=False)
 
-    sim.reset()
+    obs = sim.setup()
 
     for i in range(9):
         action = np.random.choice([1, 2, 3, 4, 5])
         state_next, reward, terminal, info = sim.step(action)
-        print(state_next)
+        print(len(state_next["prospects"]))
         print(reward)
         print(terminal)
 

@@ -26,8 +26,10 @@ class Prospect(AbstractProspect):
         self.env = env
         self.config = config  # Config dict from JSON file
         self.prospect_config = config["prospect_config"]
-        self.patience = random.uniform(self.prospect_config["min_patience"], self.prospect_config["max_patience"])  # An assigned patience
-        self.servicing = random.randint(self.prospect_config["min_servicing"], self.prospect_config["max_servicing"])  # An assigned service time
+        self.patience = random.uniform(self.prospect_config["min_patience"],
+                                       self.prospect_config["max_patience"])  # An assigned patience
+        self.servicing = random.expovariate(1.0 / random.randint(self.prospect_config["min_servicing"],
+                                                                 self.prospect_config["max_servicing"]))  # An assigned service time
         self.arrival = env.now  # The time the prospective customer is instantiated
 
     def render(self):
@@ -37,12 +39,10 @@ class Prospect(AbstractProspect):
         with counter.request() as req:
             # Wait for the counter or abort at the end of our tether
             results = yield req | self.env.timeout(self.patience)
-            print(req)
 
             wait = self.env.now - self.arrival  # The time the prospective customer is instantiated to the current time
 
             if req in results:
-                tib = random.expovariate(1.0 / self.servicing)
 
                 yield self.env.timeout(self.servicing)
 
@@ -53,7 +53,10 @@ class Prospect(AbstractProspect):
         pass
 
     def __repr__(self):
-        pass
+        return f"'Name': {self.id}," \
+               f"'Arrival': {self.arrival}," \
+               f"'Patience': {self.patience}," \
+               f"'Servicing': {self.servicing}"
 
     def __str__(self):
         self.render()

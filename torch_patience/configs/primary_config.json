@@ -1,5 +1,6 @@
 {
   "run_name": "development_run",
+  "real_time": true,
   "random_seed": 42,
   "device": "cpu",
   "logging": "logging.INFO",
