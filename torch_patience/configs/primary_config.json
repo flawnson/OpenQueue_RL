@@ -1,6 +1,6 @@
 {
   "run_name": "development_run",
-  "real_time": true,
+  "real_time": false,
   "random_seed": 42,
   "device": "cpu",
   "logging": "logging.INFO",
@@ -9,12 +9,12 @@
     "intervals": 10.0,
     "min_patience": 1,
     "max_patience": 3,
-    "min_servicing": 3,
-    "max_servicing": 5
+    "min_servicing": 1,
+    "max_servicing": 2
   },
   "env_config": {
     "duration": 100,
-    "max_capacity": 12,
+    "max_capacity": 1,
     "mean_daily_prospects": 30,
     "min_delay": 0,
     "max_delay": 15

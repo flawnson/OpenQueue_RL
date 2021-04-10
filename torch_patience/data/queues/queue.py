@@ -21,8 +21,7 @@ class Queue:
         self.counter = simpy.Resource(self.env, capacity=self.env_config["max_capacity"])  # capacity is line capacity
         self.receptionist_delay = random.uniform(self.env_config["min_delay"], self.env_config["max_delay"])  # An assigned delay
         self.template_prospect = AbstractProspect(config, self.env)
-        self.curr_time_step = 1
-        self.next_time_step = 1
+        self.next_time_step = 0
 
     def _action_check(self, action):
         assert 0 <= action <= 6, f"{action} is an illegal action by model; terminating run"
@@ -34,7 +33,7 @@ class Queue:
         pass
 
     def handle_new_prospect(self, new_prospect) -> Generator:
-        return new_prospect.handle(self.counter)
+        return new_prospect.handle(self.state, self.counter)
 
     def modify_state(self, action):
         pass
@@ -51,7 +50,8 @@ class Queue:
         for prospect in range(num_prospects):
             new_prospect = Prospect(self.config, names.get_full_name(), self.env)
             self.state["prospects"].append(new_prospect)
-            self.env.process(self.handle_new_prospect(new_prospect))
+            # self.env.process(self.handle_new_prospect(new_prospect))
+            self.env.run(until=self.env.process(self.handle_new_prospect(new_prospect)))
 
     def get_reward(self):
         """ Reward always negative or 0 """
@@ -69,8 +69,10 @@ class Queue:
         self.receptionist_recovery()
 
         # Make a step in the simulation
-        self.next_time_step += self.curr_time_step
-        self.env.run(until=self.next_time_step)
+        self.next_time_step += 1
+        print(f"length of queue: {len(self.counter.queue)}")
+        self.env.run(until=self.env.now + self.next_time_step)
+        print(f"length of queue: {len(self.counter.queue)}")
 
         observation = self.state
 

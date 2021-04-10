@@ -35,7 +35,7 @@ class Prospect(AbstractProspect):
     def render(self):
         pass
 
-    def handle(self, counter):
+    def handle(self, state, counter):
         with counter.request() as req:
             # Wait for the counter or abort at the end of our tether
             results = yield req | self.env.timeout(self.patience)
@@ -43,14 +43,22 @@ class Prospect(AbstractProspect):
             wait = self.env.now - self.arrival  # The time the prospective customer is instantiated to the current time
 
             if req in results:
-
+                logger.info(f"{self.env.now} {self.id}: SERVICED after {wait}")
+                logger.info(len(state["prospects"]))
+                state["prospects"].remove(self.id)
                 yield self.env.timeout(self.servicing)
 
             else:
                 logger.info(f"{self.env.now} {self.id}: RENEGED after {wait}")
+                state["prospects"].remove(self.id)
+                logger.info(len(state["prospects"]))
 
     def write(self):
         pass
+
+    def __eq__(self, other):
+        # Currently set to index by prospect name
+        return self.id == other
 
     def __repr__(self):
         return f"'Name': {self.id}," \
